@@ -13,6 +13,10 @@ export class Slider {
     
     constructor(container, items) {
         this.container = container;
+
+        this.elastic = 0.65;
+        this.animationDuration = 200;
+        this.animationBezierCurve = [.25,.1,.25,1];
         
         this.items = new Items(items);
         this.stepper = new Stepper();
@@ -69,8 +73,8 @@ export class Slider {
         var d = to - from;
 
         this.stepper.run(
-            300,
-            [.25,.1,.25,1],
+            this.animationDuration,
+            this.animationBezierCurve,
 
             (progress) => {
                 var x = from + (d*progress);
@@ -121,21 +125,17 @@ export class Slider {
         this.lastOffsetX = this.offsetX + t.offset.x;
 
         if (!this.isValidOffsetX(this.lastOffsetX)) {
+            // Make swipe elastic to give feeling of boundry
             var d = this.getOffsetXOverlap(this.lastOffsetX);
-            var c = 0.85;
-
-            console.log('delta', d, d * c);
+            var compensation = d * this.elastic;
 
             if (this.lastOffsetX >= 0) {
-                this.lastOffsetX = this.lastOffsetX - (d * c)
+                compensation *= -1;
             }
-            else {
-                this.lastOffsetX = this.lastOffsetX + (d * c)    
-            }
-            
+
+            this.lastOffsetX = this.lastOffsetX + compensation;
         }
         
-
         this.positionStripe(this.lastOffsetX);
     }
 
