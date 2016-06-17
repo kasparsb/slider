@@ -1,7 +1,7 @@
 import _ from 'underscore';
 import Swipe from 'swipe';
 import {Stepper} from './stepper';
-
+import {Items} from './items';
 
 // Set up jquery if available globaly
 // Šito izvākt, jo _ jābūt jQuery free
@@ -13,47 +13,29 @@ export class Slider {
     
     constructor(container, items) {
         this.container = container;
-        this.items = items;
-
+        
+        this.items = new Items(items);
         this.stepper = new Stepper();
-
-        // Container platums
-        this.width = _.width(this.container);
-
-        // Sākuma swipe x offset
-        this.offsetX = 0;
-
-        this.formatItems();
-        this.createStrip();
-
         this.swipe = new Swipe(this.container, {
             direction: 'horizontal'
         });
 
+        // Container platums
+        this.width = _.width(this.container);
+        // Strip width
+        this.stripWidth = this.items.totalWidth();
+        // Sākuma swipe x offset
+        this.offsetX = 0;
+        // Katru reizi update swipe pieglabājam pēdējo uzstādīto offsetX
+        this.lastOffsetX = 0;
+        
+        this.offsetXLimits = {
+            from: -(this.stripWidth-this.width),
+            to: 0
+        }
+
+        this.createStrip();
         this.setEvents();
-    }
-
-    /**
-     * Formatējam items
-     * Viens no soļiem ir uzlikt fixed width, lai procentuālais
-     * width netiek izmainīts ievietojot items stripā
-     */
-    formatItems() {
-        var left = 0;
-        items.forEach((item) => {
-            var w = _.width(item);
-
-            _.css(item, {
-                width: w
-            });
-
-            _.data(item, 'slider', {
-                left: left,
-                width: w
-            });
-
-            left += w;
-        })
     }
 
     /**
@@ -62,125 +44,112 @@ export class Slider {
     createStrip() {
         this.strip = _.createEl('div');
         _.css(this.strip, {
-            width: this.calcItemsWidth(this.items),
+            width: this.stripWidth,
             height: _.height(this.container)
         });
 
-        this.items.forEach((item) => {
-            _.append(this.strip, item);
-        })
+        this.items.appendTo(this.strip);
 
         _.append(this.container, this.strip);
     }
 
-    calcItemsWidth(items) {
-        var t = 0;
-        items.forEach((item) => {
-            t += _.width(item);
-        })
-        return t;
+    updateOffsetX(x) {
+        this.positionStripeAnimated(this.offsetX, x, (x) => {
+            this.offsetX = x;
+        });
     }
 
-    updateOffsetX(x, animate) {
-        this.offsetX = x;
-        this.positionStripe(this.offsetX, animate);
+    positionStripe(x) {
+        _.css(this.strip, {
+            transform: 'translate('+x+'px,0)'
+        })
+    }
+
+    positionStripeAnimated(from, to, cb) {
+        var d = to - from;
+
+        this.stepper.run(
+            300,
+            [.25,.1,.25,1],
+
+            (progress) => {
+                var x = from + (d*progress);
+
+                this.positionStripe(x);
+                
+                cb(x);
+            },
+
+            () => {}
+        );
+    }
+
+    snapLeft() {
+        var x = Math.abs(this.validateOffsetX(this.offsetX));
+
+        var item = this.items.findLeft(x);
+        
+        this.updateOffsetX(-item.left);
+    }
+
+    snapRight() {
+        var x = Math.abs(this.validateOffsetX(this.offsetX));
+
+        //var item = this.items.findRight(x + this.width);
+        var item = this.items.findRight(x);
+
+        this.updateOffsetX(-item.left);
+    }
+
+    prev() {
+        var x = Math.abs(this.offsetX);
+
+        var c = this.items.findLeft(x);
+        
+        this.updateOffsetX(-(Math.abs(this.offsetX) + c.width));
+    }
+
+    next() {
+        var x = Math.abs(this.offsetX);
+
+        var c = this.items.findRight(x + this.width);
+
+        this.updateOffsetX(-(c.left + c.width) + this.width);
     }
 
     handleSwipeMove(t) {
-        this.positionStripe(this.offsetX + t.offset.x);
+        this.lastOffsetX = this.offsetX + t.offset.x;
+
+        if (!this.isValidOffsetX(this.lastOffsetX)) {
+            var d = this.getOffsetXOverlap(this.lastOffsetX);
+            var c = 0.85;
+
+            console.log('delta', d, d * c);
+
+            if (this.lastOffsetX >= 0) {
+                this.lastOffsetX = this.lastOffsetX - (d * c)
+            }
+            else {
+                this.lastOffsetX = this.lastOffsetX + (d * c)    
+            }
+            
+        }
+        
+
+        this.positionStripe(this.lastOffsetX);
     }
 
     handleSwipeEnd(t) {
-        this.offsetX = this.offsetX + t.offset.x;
+        this.offsetX = this.lastOffsetX;
+
+        // Validējam offsetX
+
         if (t.direction == 'left') {
             this.snapLeft();
         }
         else {
             this.snapRight();    
         }
-    }
-
-    snapLeft() {
-        var item = this.findLeft(Math.abs(this.offsetX));
-        
-        this.updateOffsetX(-_.data(item, 'slider').left, true);
-    }
-
-    snapRight() {
-        var item = this.findRight(Math.abs(this.offsetX) + this.width);
-
-        this.updateOffsetX((-_.data(item, 'slider').left) + this.width, true);
-    }
-
-    positionStripe(x, animate) {
-        if (!animate) {
-            _.css(this.strip, {
-                transform: 'translate('+x+'px,0)'
-            })
-        }
-        else {
-            this.stepper.run(
-                300,
-                [0,0,1,1],
-
-                (progress) => {
-                    _.css(this.strip, {
-                        transform: 'translate('+(x*progress)+'px,0)'
-                    })
-                },
-
-                () => {}
-            );
-        }
-    }
-
-    /**
-     * Atrodam pirmo elementu, kuram left pozīcija ir 
-     * lielāka par offsetX
-     */
-    findLeft(left) {
-        var i = null;
-        
-        this.items.forEach((item) => {
-            var s = _.data(item, 'slider');
-            if (s.left >= left) {
-                if (!i) {
-                    i = item;
-                }
-            }
-        })
-
-        return i;
-    }
-
-    /**
-     * Atrodam pēdējo elementu, kuram left ir mazāks par
-     * this.offsetX + this.width
-     */
-    findRight(right) {
-        var i = null;
-
-        this.items.forEach((item) => {
-            var s = _.data(item, 'slider');
-            if (s.left < right) {
-                i = item;
-            }
-        })
-
-        return i;
-    }
-
-    prev() {
-        var c = this.findLeft(Math.abs(this.offsetX));
-        
-        this.updateOffsetX(-(Math.abs(this.offsetX) + _.data(c, 'slider').width), true);
-    }
-
-    next() {
-        var c = this.findRight(Math.abs(this.offsetX) + this.width);
-        var d = _.data(c, 'slider');
-
-        this.updateOffsetX(  -(d.left + d.width) + this.width  );
     }
 
     setEvents() {
@@ -193,4 +162,42 @@ export class Slider {
         })
     }
 
+    /**
+     * Pārbaudām vai padotais x ir offsetXlimit robežās
+     */
+    isValidOffsetX(x) {
+        if (x >= this.offsetXLimits.from && x <= this.offsetXLimits.to) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    validateOffsetX(x) {
+        if (x < this.offsetXLimits.from) {
+            return this.offsetXLimits.from;
+        }
+        else if (x > this.offsetXLimits.to) {
+            return this.offsetXLimits.to;
+        }
+        else {
+            return x;
+        }
+    }
+
+    /**
+     * Aprēķinam par cik padotais x ir ārpus offsetXlimit robežām
+     */
+    getOffsetXOverlap(x) {
+        if (x < this.offsetXLimits.from) {
+            return Math.abs(x - this.offsetXLimits.from);
+        }
+        else if (x > this.offsetXLimits.to) {
+            return Math.abs(x - this.offsetXLimits.to);
+        }
+        else {
+            return 0;
+        }
+    }
 }
