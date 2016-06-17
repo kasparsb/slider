@@ -10,13 +10,58 @@
             padding: 0;
             margin: 0;
         }
-        
+        .doc {
+            max-width: 500px;
+            margin: 80px auto 0
+        }
+        .nav {
+            padding: 0 0 20px;
+            text-align: center;
+        }
+        .slider {
+            height: 120px;
+            border: 2px solid silver;
+        }
+        .item {
+            width: 33%;
+            height: 100%;
+            float: left;
+            position: relative;
+            text-indent: 10px;
+            line-height: 40px;
+        }
+        .item:before {
+            content: '';
+            display: block;
+            position: absolute;
+            border: 2px solid silver;
+            top: 2px;
+            right: 2px;
+            left: 2px;
+            bottom: 2px;
+        }
     </style>
 </head>
 <body>
 
+    <div class="doc">
+        <div class="nav">
+            <button class="prev">Prev</button>
+            <button class="next">Next</button>
+        </div>
+        <div class="slider">
+            <div class="item">1</div>
+            <div class="item">2</div>
+            <div class="item">3</div>
+            <div class="item">4</div>
+            <div class="item">5</div>
+            <div class="item">6</div>
+            <div class="item">7</div>
+        </div>
+    </div>
     
-    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <!--script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script-->
+    <script src="./j.js"></script>
     <script src="../build/app.js"></script>
     <script src="./app.js"></script>
 </body>
