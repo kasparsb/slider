@@ -53,45 +53,13 @@ export class Items {
         })
     }
 
-    /**
-     * Atrodam pirmo elementu, kuram left pozīcija ir 
-     * lielāka par padoto t
-     */
-    findLeft(t) {
-        var r = null;
-        
-        console.log('findLeft');
+    filter(cb) {
+        var r = [];
         this.items.forEach((item) => {
-            if (item.left >= t && !r) {
-                console.log(item.left, t, 'yes');
-                r = item;
+            if (cb(item)) {
+                r.push(item);
             }
-            else {
-                console.log(item.left, t, 'no');
-            }
-        })
-
-        return r;
-    }
-
-    /**
-     * Atrodam pēdējo elementu, kuram left ir mazāks par
-     * norādīto t
-     */
-    findRight(t) {
-        var r = null;
-
-        console.log('findRight');
-        this.items.forEach((item) => {
-            if (item.left <= t) {
-                console.log(item.left, t, 'yes');
-                r = item;
-            }
-            else {
-                console.log(item.left, t, 'no');
-            }
-        })
-
+        });
         return r;
     }
 }

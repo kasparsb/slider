@@ -91,34 +91,61 @@ export class Slider {
     snapLeft() {
         var x = Math.abs(this.validateOffsetX(this.offsetX));
 
-        var item = this.items.findLeft(x);
-        
-        this.updateOffsetX(-item.left);
+        // Atrodam visus, kuriem left > x
+        var items = this.items.filter((item) => {
+            return item.left >= x;
+        });
+
+        // Ņemam pirmo
+        if (items.length > 0) {
+            x = this.validateOffsetX(-items[0].left);
+            this.updateOffsetX(x);
+        }        
     }
 
     snapRight() {
         var x = Math.abs(this.validateOffsetX(this.offsetX));
 
-        //var item = this.items.findRight(x + this.width);
-        var item = this.items.findRight(x);
+        // Atrodam visus, kuriem left < x
+        var items = this.items.filter((item) => {
+            return item.left <= x;
+        });
 
-        this.updateOffsetX(-item.left);
+        // Ņemam pēdējo
+        if (items.length > 0) {
+            x = this.validateOffsetX(-items[items.length-1].left);
+            this.updateOffsetX(x);
+        }
     }
 
     prev() {
         var x = Math.abs(this.offsetX);
 
-        var c = this.items.findLeft(x);
-        
-        this.updateOffsetX(-(Math.abs(this.offsetX) + c.width));
+        var items = this.items.filter((item) => {
+            return item.left < (x-4);
+        });
+
+        if (items.length > 0) {
+            x = -items[items.length-1].left;
+            if (this.isValidOffsetX(x-4)) {
+                this.updateOffsetX(x);    
+            }
+        }
     }
 
     next() {
         var x = Math.abs(this.offsetX);
 
-        var c = this.items.findRight(x + this.width);
+        var items = this.items.filter((item) => {
+            return item.left > (x+4);
+        });
 
-        this.updateOffsetX(-(c.left + c.width) + this.width);
+        if (items.length > 0) {
+            x = -items[0].left;
+            if (this.isValidOffsetX(x+4)) {
+                this.updateOffsetX(x);    
+            }
+        }
     }
 
     handleSwipeMove(t) {
