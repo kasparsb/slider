@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "main": "js/main.js",
+  "dependencies": {
+    "underscore": "git+https://github.com/kasparsb/underscore.git",
+    "swipe": "git+https://github.com/kasparsb/swipe.git"
+  },
   "devDependencies": {
     "gulp": "^3.9.0",
     "vinyl-source-stream": "^1.1.0",
