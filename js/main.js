@@ -48,8 +48,8 @@ export class Slider {
     createStrip() {
         this.strip = _.createEl('div');
         _.css(this.strip, {
+            overflow: 'hidden',
             width: this.stripWidth,
-            height: _.height(this.container)
         });
 
         this.items.appendTo(this.strip);
