@@ -18,7 +18,7 @@ export class Items {
             var item = {
                 el: el,
                 left: left,
-                width: _.width(el),
+                width: _.outerWidth(el),
             }
 
             left += item.width;
