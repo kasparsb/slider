@@ -11,12 +11,18 @@ if (jQuery) {
 
 export class Slider {
     
-    constructor(container, items) {
+    constructor(container, items, settings) {
+        settings = typeof settings == 'undefined' ? {} : settings;
+
         this.container = container;
 
         this.elastic = 0.65;
         this.animationDuration = 200;
         this.animationBezierCurve = [.25,.1,.25,1];
+
+        this.settings = _.extend({
+            align: 'center'
+        }, settings);
         
         this.items = new Items(items);
         this.stepper = new Stepper();
@@ -28,6 +34,7 @@ export class Slider {
         this.width = _.width(this.container);
         // Strip width
         this.stripWidth = this.items.totalWidth();
+
         // Sākuma swipe x offset
         this.offsetX = 0;
         // Katru reizi update swipe pieglabājam pēdējo uzstādīto offsetX
@@ -40,6 +47,7 @@ export class Slider {
 
         this.createStrip();
         this.setEvents();
+        this.alignItems();
     }
 
     /**
@@ -148,6 +156,14 @@ export class Slider {
         }
     }
 
+    alignItems() {
+        if (this.isOverflow()) {
+            return;
+        }
+
+        this.positionStripe(-(this.stripWidth - this.width)/2);
+    }
+
     handleSwipeMove(t) {
         this.lastOffsetX = this.offsetX + t.offset.x;
 
@@ -182,10 +198,14 @@ export class Slider {
     setEvents() {
         // Swipe events
         this.swipe.on('move', (t) => {
-            this.handleSwipeMove(t)
+            if (this.isOverflow()) {
+                this.handleSwipeMove(t)
+            }
         })
         this.swipe.on('end', (t) => {
-            this.handleSwipeEnd(t)
+            if (this.isOverflow()) {
+                this.handleSwipeEnd(t)
+            }
         })
     }
 
@@ -226,5 +246,12 @@ export class Slider {
         else {
             return 0;
         }
+    }
+
+    /**
+     * Atgriež pazīmi vai stripWidth ir lielāks par container width
+     */
+    isOverflow() {
+        return this.width < this.stripWidth;
     }
 }
