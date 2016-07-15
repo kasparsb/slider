@@ -21,7 +21,8 @@ export class Slider {
         this.animationBezierCurve = [.25,.1,.25,1];
 
         this.settings = _.extend({
-            align: 'center'
+            align: 'center',
+            navigationStatus: null
         }, settings);
         
         this.items = new Items(items);
@@ -30,6 +31,7 @@ export class Slider {
             direction: 'horizontal'
         });
 
+        this.stripePositionX = 0;
         // Container platums
         this.width = _.width(this.container);
         // Strip width
@@ -48,6 +50,7 @@ export class Slider {
         this.createStrip();
         this.setEvents();
         this.alignItems();
+        this.announceNavigationStatus();
     }
 
     /**
@@ -72,8 +75,10 @@ export class Slider {
     }
 
     positionStripe(x) {
+        this.stripePositionX = x;
+
         _.css(this.strip, {
-            transform: 'translate('+x+'px,0)'
+            transform: 'translate('+this.stripePositionX+'px,0)'
         })
     }
 
@@ -92,8 +97,14 @@ export class Slider {
                 cb(x);
             },
 
-            () => {}
+            () => {
+                this.announceNavigationStatus();
+            }
         );
+    }
+
+    getStripePosition() {
+        return this.stripePositionX;
     }
 
     snapLeft() {
@@ -136,7 +147,9 @@ export class Slider {
         if (items.length > 0) {
             x = -items[items.length-1].left;
             if (this.isValidOffsetX(x-4)) {
-                this.updateOffsetX(x);    
+                this.updateOffsetX(x);
+
+                this.announceNavigationStatus();
             }
         }
     }
@@ -151,7 +164,9 @@ export class Slider {
         if (items.length > 0) {
             x = -items[0].left;
             if (this.isValidOffsetX(x+4)) {
-                this.updateOffsetX(x);    
+                this.updateOffsetX(x);
+
+                this.announceNavigationStatus();
             }
         }
     }
@@ -207,6 +222,27 @@ export class Slider {
                 this.handleSwipeEnd(t)
             }
         })
+    }
+
+    /**
+     * Paziņojam par navigācijas pogu redzamību
+     */
+    announceNavigationStatus() {
+        if (!this.settings.navigationStatus) {
+            return;
+        }
+
+        var nav = {
+            next: false,
+            prev: false
+        }
+
+        if (this.isOverflow()) {
+            nav.next = (Math.abs(this.getStripePosition()) + this.width) < (this.stripWidth - 4)
+            nav.prev = this.getStripePosition() < 0;
+        }
+
+        this.settings.navigationStatus(nav)
     }
 
     /**
