@@ -230,7 +230,7 @@ export class Slider {
     }
 
     setEvents() {
-        $(window).on('resize', _.debounce(this.handleResize, 200, this));
+        _.on(window, 'resize', _.debounce(this.handleResize, 200, this));
 
         // Swipe events
         this.swipe.on('move', (t) => {
