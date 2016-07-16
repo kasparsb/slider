@@ -159,12 +159,9 @@ export class Slider {
         });
 
         if (items.length > 0) {
-            x = -items[items.length-1].left;
-            if (this.isValidOffsetX(x-4)) {
-                this.updateOffsetX(x);
-
-                this.announceNavigationStatus();
-            }
+            x = this.validateOffsetX(-items[items.length-1].left);
+            this.updateOffsetX(x);
+            this.announceNavigationStatus();
         }
     }
 
@@ -176,12 +173,9 @@ export class Slider {
         });
 
         if (items.length > 0) {
-            x = -items[0].left;
-            if (this.isValidOffsetX(x+4)) {
-                this.updateOffsetX(x);
-
-                this.announceNavigationStatus();
-            }
+            x = this.validateOffsetX(-items[0].left);
+            this.updateOffsetX(x);
+            this.announceNavigationStatus();
         }
     }
 
