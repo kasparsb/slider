@@ -32,23 +32,30 @@ export class Slider {
         });
 
         this.stripePositionX = 0;
-        // Container platums
-        this.width = _.width(this.container);
-        // Strip width
-        this.stripWidth = this.items.totalWidth();
-
         // Sākuma swipe x offset
         this.offsetX = 0;
         // Katru reizi update swipe pieglabājam pēdējo uzstādīto offsetX
         this.lastOffsetX = 0;
-        
-        this.offsetXLimits = {
-            from: -(this.stripWidth-this.width),
-            to: 0
-        }
+        // Strip width
+        this.stripWidth = this.items.totalWidth();
 
         this.createStrip();
         this.setEvents();
+
+        this.initView();
+    }
+
+    /**
+     * Nolasam esošo container platumu
+     * Pielāgojam swipe limits
+     * Align items - ja items ir īsāki par container, tad alignējam, ja nē, tad iedarbinam swipe
+     * Paziņojam par navigācijas pogu redzamību
+     */
+    initView() {
+        // Container platums
+        this.width = _.width(this.container);
+        // Offset limits
+        this.offsetXLimits = this.getOffsetXLimits();
         this.alignItems();
         this.announceNavigationStatus();
     }
@@ -101,6 +108,13 @@ export class Slider {
                 this.announceNavigationStatus();
             }
         );
+    }
+
+    getOffsetXLimits() {
+        return {
+            from: -(this.stripWidth-this.width),
+            to: 0
+        }
     }
 
     getStripePosition() {
@@ -173,10 +187,15 @@ export class Slider {
 
     alignItems() {
         if (this.isOverflow()) {
-            return;
+            this.positionStripe(0);
         }
+        else {
+            this.positionStripe(-(this.stripWidth - this.width)/2);
+        }
+    }
 
-        this.positionStripe(-(this.stripWidth - this.width)/2);
+    handleResize() {
+        this.initView();
     }
 
     handleSwipeMove(t) {
@@ -211,6 +230,8 @@ export class Slider {
     }
 
     setEvents() {
+        $(window).on('resize', _.debounce(this.handleResize, 200, this));
+
         // Swipe events
         this.swipe.on('move', (t) => {
             if (this.isOverflow()) {
